@@ -1,4 +1,4 @@
-﻿@page "/pasantia"
+﻿@page "/"
 @using Newtonsoft.Json
 @using PasantIABlazorApp.Models
 @inject HttpClient Http
@@ -9,12 +9,16 @@
 
 <PageTitle>PasantIA</PageTitle>
 
-<h3>PasantIA</h3>
-<h6>Para utilizar el reconocimiento de imagenes, ingrese el enlace del blob storage en el siguiente campo:</h6>
-<div class="container">
+<div class="container-fluid">
+	<div class="row align-content-center">		
+		<h2>PasantIA</h2>
+	</div>
 	<div class="row">
-		<div class="col">
+		<div class="col-5">
 			<div class="container-fluid">
+				<div class="row">	
+					<h4>Carga de imagenes</h4>
+				</div>
 				<div class="row justify-content-center">
 					<div class="card shadow">
 						<div class="card-body">
@@ -22,17 +26,27 @@
 								<label class="col-form-label">Enlace</label>
 								<EditForm Model="@pasantiaRequest" OnValidSubmit="OnValidSubmit">
 									<InputText class="form-control" @bind-Value="pasantiaRequest.EnlacePasantia"/>
-									<button class="btn btn-danger btn-block mt-2" type="submit">Cargar pasantia</button>
+									<button disabled="@loading" class="btn btn-danger btn-block mt-2" type="submit">
+										@if (loading)
+										{
+											<span class="spinner-border spinner-border-sm mr-1"></span>
+										}
+										Cargar imagen pasantia
+									</button>
 								</EditForm>
-							</div>
+							</div>			
+							<img class="mt-4" src="@pasantiaRequest.EnlacePasantia" />
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>		
-		<div class="col">
+		<div class="col-7">
 
 			<div class="container-fluid">
+				<div class="row">	
+					<h4>Datos extraídos:</h4>
+				</div>
 				<div class="row justify-content-center">
 					<div class="card shadow">
 						<div class="card-body">				
@@ -51,7 +65,7 @@
 								</div>
 								<div class="form-group">
 									<label class="col-form-label">Requisitos</label>	
-									<InputText class="form-control" @bind-Value="pasantiaResponse.Requisitos"/>					
+									<InputTextArea class="form-control" rows="3" @bind-Value="pasantiaResponse.Requisitos"/>					
 								</div>
 								<div class="form-group">
 									<label class="col-form-label">Teléfono</label>
@@ -75,7 +89,7 @@
 								</div>
 								<div class="form-group">
 									<label class="col-form-label">Beneficios</label>					
-									<InputText class="form-control" @bind-Value="pasantiaResponse.Beneficios"/>
+									<InputTextArea class="form-control" rows="3" @bind-Value="pasantiaResponse.Beneficios"/>
 								</div>
 								<div class="form-group">
 									<label class="col-form-label">Objetivo</label>
@@ -83,7 +97,7 @@
 								</div>
 								<div class="form-group">
 									<label class="col-form-label">Habilidades</label>	
-									<InputText class="form-control" @bind-Value="pasantiaResponse.Habilidades"/>					
+									<InputTextArea class="form-control" rows="3" @bind-Value="pasantiaResponse.Habilidades"/>					
 								</div>
 								<div class="form-group">
 									<label class="col-form-label">Funciones</label>
@@ -93,7 +107,13 @@
 									<label class="col-form-label">NombreContacto</label>	
 									<InputText class="form-control" @bind-Value="pasantiaResponse.NombreContacto"/>					
 								</div>
-								<button class="btn btn-danger btn-block mt-2" type="submit">Cargar a CosmosDB</button>
+								<button disabled="@loading2" class="btn btn-danger btn-block mt-2" type="submit">
+									@if (loading2)
+									{
+										<span class="spinner-border spinner-border-sm mr-1"></span>
+									}
+									Cargar a CosmosDB
+								</button>
 							</EditForm>
 						</div>
 					</div>
@@ -112,6 +132,8 @@
 	PasantiaRequest pasantiaRequest;
 	PasantiaResponse pasantiaResponse;
 	String url = "https://localhost:7001/Pasantia";
+	bool loading = false;
+	bool loading2 = false;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -123,7 +145,9 @@
 	{
 		try
 		{
+			loading = true;
 			pasantiaResponse = await Http.GetFromJsonAsync<PasantiaResponse>(url + "?uriBlobStorage=" + pasantiaRequest.EnlacePasantia);
+			loading = false;
 			StateHasChanged();
 		}
 		catch (Exception)
@@ -135,21 +159,11 @@
 	{
 		try
 		{
-			var httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
-            httpWebRequest.ContentType = "application/json";
-            httpWebRequest.Method = "POST";
-
-            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
-            {
-                string json = JsonConvert.SerializeObject(pasantiaResponse);
-                streamWriter.Write(json);
-            }
-
-            var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-            using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-            {
-                var result = streamReader.ReadToEnd();
-            }
+			
+			loading2 = true;
+			var result = await Http.PostAsJsonAsync(url, pasantiaResponse);
+			var content = await result.Content.ReadFromJsonAsync<PasantiaResponse>();
+			loading2 = false;
 			StateHasChanged();
 		}
 		catch (Exception)
