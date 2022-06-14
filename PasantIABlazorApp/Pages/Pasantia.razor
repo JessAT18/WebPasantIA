@@ -1,0 +1,47 @@
+﻿@page "/pasantia"
+@using PasantIABlazorApp.Models
+@inject HttpClient Http
+@using System.Net.Http
+@using System.Net.Http.Json
+@using System.Threading.Tasks
+
+<PageTitle>PasantIA</PageTitle>
+
+<h1>Ingrese el enlace en blob storage para analizar la imagen</h1>
+
+<EditForm Model="@pasantia" OnValidSubmit="OnValidSubmit">
+	<InputText @bind-Value="pasantia.EnlacePasantia"/>
+	<button class="btn btn-danger btn-block" type="submit">Cargar pasantia</button>
+</EditForm>
+
+@if (bandera)
+{
+	<p>@infoPasantia.Modalidad</p>
+	<p>@infoPasantia.NombreContacto</p>
+	<p>@infoPasantia.NombreEmpresa</p>
+}
+
+@code {
+	PasantiaRequest pasantia;
+	PasantiaResponse infoPasantia;
+	bool bandera;
+
+	protected override async Task OnInitializedAsync()
+	{
+		pasantia = new PasantiaRequest();
+		bandera = false;
+	}
+
+	private async void OnValidSubmit()
+	{
+		try
+		{
+			infoPasantia = await Http.GetFromJsonAsync<PasantiaResponse>("https://localhost:7001/Pasantia?uriBlobStorage=https://formanalyzerstorage.blob.core.windows.net/trainimages/pasantia5.PNG");
+			bandera = true;
+		}
+		catch (Exception)
+		{
+			throw;
+		}
+	}
+}
