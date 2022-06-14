@@ -1,43 +1,156 @@
 ﻿@page "/pasantia"
+@using Newtonsoft.Json
 @using PasantIABlazorApp.Models
 @inject HttpClient Http
 @using System.Net.Http
 @using System.Net.Http.Json
 @using System.Threading.Tasks
+@using System.Net
 
 <PageTitle>PasantIA</PageTitle>
 
-<h1>Ingrese el enlace en blob storage para analizar la imagen</h1>
+<h3>PasantIA</h3>
+<h6>Para utilizar el reconocimiento de imagenes, ingrese el enlace del blob storage en el siguiente campo:</h6>
+<div class="container">
+	<div class="row">
+		<div class="col">
+			<div class="container-fluid">
+				<div class="row justify-content-center">
+					<div class="card shadow">
+						<div class="card-body">
+							<div class="form-group pb-1 mb-2">
+								<label class="col-form-label">Enlace</label>
+								<EditForm Model="@pasantiaRequest" OnValidSubmit="OnValidSubmit">
+									<InputText class="form-control" @bind-Value="pasantiaRequest.EnlacePasantia"/>
+									<button class="btn btn-danger btn-block mt-2" type="submit">Cargar pasantia</button>
+								</EditForm>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>		
+		<div class="col">
 
-<EditForm Model="@pasantia" OnValidSubmit="OnValidSubmit">
-	<InputText @bind-Value="pasantia.EnlacePasantia"/>
-	<button class="btn btn-danger btn-block" type="submit">Cargar pasantia</button>
-</EditForm>
+			<div class="container-fluid">
+				<div class="row justify-content-center">
+					<div class="card shadow">
+						<div class="card-body">				
+							<EditForm Model="@pasantiaResponse" OnValidSubmit="OnValidSubmitFormPasantia">					
+								<div class="form-group">
+									<label class="col-form-label">Título</label>					
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Titulo"/>
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Ubicación</label>					
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Ubicacion"/>
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Modalidad</label>	
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Modalidad"/>					
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Requisitos</label>	
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Requisitos"/>					
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Teléfono</label>
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Telefono"/>						
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Area</label>	
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Cargo"/>					
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Horario</label>					
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Horario"/>
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Correo</label>
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Correo"/>						
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">NombreEmpresa</label>					
+									<InputText class="form-control" @bind-Value="pasantiaResponse.NombreEmpresa"/>
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Beneficios</label>					
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Beneficios"/>
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Objetivo</label>
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Objetivo"/>						
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Habilidades</label>	
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Habilidades"/>					
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">Funciones</label>
+									<InputText class="form-control" @bind-Value="pasantiaResponse.Funciones"/>						
+								</div>
+								<div class="form-group">
+									<label class="col-form-label">NombreContacto</label>	
+									<InputText class="form-control" @bind-Value="pasantiaResponse.NombreContacto"/>					
+								</div>
+								<button class="btn btn-danger btn-block mt-2" type="submit">Cargar a CosmosDB</button>
+							</EditForm>
+						</div>
+					</div>
+				</div>
+			</div>
 
-@if (bandera)
-{
-	<p>@infoPasantia.Modalidad</p>
-	<p>@infoPasantia.NombreContacto</p>
-	<p>@infoPasantia.NombreEmpresa</p>
-}
+
+		</div>
+	</div>
+</div>
+
+
+
 
 @code {
-	PasantiaRequest pasantia;
-	PasantiaResponse infoPasantia;
-	bool bandera;
+	PasantiaRequest pasantiaRequest;
+	PasantiaResponse pasantiaResponse;
+	String url = "https://localhost:7001/Pasantia";
 
 	protected override async Task OnInitializedAsync()
 	{
-		pasantia = new PasantiaRequest();
-		bandera = false;
+		pasantiaRequest = new PasantiaRequest();
+		pasantiaResponse = new PasantiaResponse();
 	}
 
 	private async void OnValidSubmit()
 	{
 		try
 		{
-			infoPasantia = await Http.GetFromJsonAsync<PasantiaResponse>("https://localhost:7001/Pasantia?uriBlobStorage=https://formanalyzerstorage.blob.core.windows.net/trainimages/pasantia5.PNG");
-			bandera = true;
+			pasantiaResponse = await Http.GetFromJsonAsync<PasantiaResponse>(url + "?uriBlobStorage=" + pasantiaRequest.EnlacePasantia);
+			StateHasChanged();
+		}
+		catch (Exception)
+		{
+			throw;
+		}
+	}	
+	private async void OnValidSubmitFormPasantia()
+	{
+		try
+		{
+			var httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "POST";
+
+            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+            {
+                string json = JsonConvert.SerializeObject(pasantiaResponse);
+                streamWriter.Write(json);
+            }
+
+            var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+            using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+            {
+                var result = streamReader.ReadToEnd();
+            }
+			StateHasChanged();
 		}
 		catch (Exception)
 		{
